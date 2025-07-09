@@ -1,6 +1,6 @@
 import { curve, heroBackground } from "../assets";
 import Section from "./Section";
-import { BackgroundCircles, BottomLine,  } from "./design/Hero";
+import { BackgroundCircles, BottomLine } from "./design/Hero";
 import { useState, useRef } from "react";
 
 const Hero = () => {
@@ -8,7 +8,8 @@ const Hero = () => {
 
   const [answers, setAnswers] = useState({
     age: 30,
-    revenu: 30000,
+    revenu_annuel: 30000,
+    montant_investi: 10000,
     horizon: 5,
     risk_aversion: "faible",
     objectif: "croissance modérée",
@@ -65,7 +66,7 @@ const Hero = () => {
           </h1>
 
           <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow max-w-xl mx-auto text-left">
-            <label className="block mb-3">
+            <label className="block mb-3 text-black">
               Âge :
               <input
                 type="number"
@@ -77,19 +78,30 @@ const Hero = () => {
               />
             </label>
 
-            <label className="block mb-3">
+            <label className="block mb-3 text-black">
               Revenu annuel (€) :
               <input
                 type="number"
-                name="revenu"
-                value={answers.revenu}
+                name="revenu_annuel"
+                value={answers.revenu_annuel}
+                onChange={handleChange}
+                className="w-full p-2 border rounded mt-1"
+                required
+              />
+            </label>
+             <label className="block mb-3 text-black">
+              Montant investi (€) :
+              <input
+                type="number"
+                name="montant_investi"
+                value={answers.montant_investi}
                 onChange={handleChange}
                 className="w-full p-2 border rounded mt-1"
                 required
               />
             </label>
 
-            <label className="block mb-3">
+            <label className="block mb-3 text-black">
               Horizon investissement (années) :
               <input
                 type="number"
@@ -101,7 +113,7 @@ const Hero = () => {
               />
             </label>
 
-            <label className="block mb-3">
+            <label className="block mb-3 text-black">
               Aversion au risque :
               <select
                 name="risk_aversion"
@@ -115,7 +127,7 @@ const Hero = () => {
               </select>
             </label>
 
-            <label className="block mb-3">
+            <label className="block mb-3 text-black">
               Objectif d’investissement :
               <select
                 name="objectif"
@@ -129,17 +141,16 @@ const Hero = () => {
               </select>
             </label>
 
-           <label className="block mb-6 text-black">
-  <input
-    type="checkbox"
-    name="esg_preference"
-    checked={answers.esg_preference}
-    onChange={handleChange}
-    className="mr-2"
-  />
-  Préférence ESG
-</label>
-
+            <label className="block mb-6 text-black">
+              <input
+                type="checkbox"
+                name="esg_preference"
+                checked={answers.esg_preference}
+                onChange={handleChange}
+                className="mr-2"
+              />
+              Préférence ESG
+            </label>
 
             <button
               type="submit"
