@@ -2,19 +2,22 @@ import { curve, heroBackground } from "../assets";
 import Section from "./Section";
 import { BackgroundCircles, BottomLine } from "./design/Hero";
 import { useState, useRef } from "react";
+import axios from "axios";
 
 const Hero = () => {
   const parallaxRef = useRef(null);
 
   const [answers, setAnswers] = useState({
     age: 30,
-    revenu_annuel: 30000,
-    montant_investi: 10000,
+    revenu: 30000,
     horizon: 5,
-    risk_aversion: "faible",
-    objectif: "croissance modérée",
+    risk_aversion: "faible", // French enum as expected by backend
+    objectif: "préservation du capital", // French enum as expected by backend
     esg_preference: false,
   });
+
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -27,17 +30,12 @@ const Hero = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://127.0.0.1:8000/submit_profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(answers),
-      });
-      const result = await response.json();
-      alert("Profil reçu !");
-      console.log(result);
+      const response = await axios.post("http://127.0.0.1:8000/submit_profile", answers);
+      setResult(response.data);
+      setError("");
     } catch (err) {
       console.error(err);
-      alert("Erreur d'envoi");
+      setError("Une erreur est survenue lors de l'envoi du formulaire.");
     }
   };
 
@@ -82,19 +80,8 @@ const Hero = () => {
               Revenu annuel (€) :
               <input
                 type="number"
-                name="revenu_annuel"
-                value={answers.revenu_annuel}
-                onChange={handleChange}
-                className="w-full p-2 border rounded mt-1"
-                required
-              />
-            </label>
-             <label className="block mb-3 text-black">
-              Montant investi (€) :
-              <input
-                type="number"
-                name="montant_investi"
-                value={answers.montant_investi}
+                name="revenu"
+                value={answers.revenu}
                 onChange={handleChange}
                 className="w-full p-2 border rounded mt-1"
                 required
@@ -159,6 +146,17 @@ const Hero = () => {
               Envoyer
             </button>
           </form>
+
+          {error && <p className="text-red-500 mt-4">{error}</p>}
+
+          {result && (
+            <div className="mt-6 text-left bg-gray-100 p-4 rounded">
+              <h3 className="text-lg font-bold mb-2">Résultat du profil :</h3>
+              <p><strong>Profil :</strong> {result.profil}</p>
+              <p><strong>Score de risque :</strong> {result.risk_score}</p>
+              <p><strong>Recommandation :</strong> {result.recommendation}</p>
+            </div>
+          )}
         </div>
 
         {/* Background design & gradient */}
