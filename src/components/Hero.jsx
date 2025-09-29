@@ -3,6 +3,7 @@ import Section from "./Section";
 import { BackgroundCircles, BottomLine } from "./design/Hero";
 import { useState, useRef } from "react";
 import axios from "axios";
+import Button from "./Button";
 import {
   PieChart, Pie, Cell,
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -13,6 +14,7 @@ const Hero = () => {
   const parallaxRef = useRef(null);
 
   const [answers, setAnswers] = useState({
+    email: "",           // ✅ Ajout de l'email
     age: 30,
     revenu: 30000,
     horizon: 5,
@@ -23,7 +25,7 @@ const Hero = () => {
 
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
-  
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setAnswers({
@@ -43,8 +45,6 @@ const Hero = () => {
       setResult(response.data);
       setError("");
       console.log("Full result:", response.data);
-      console.log("Sim performance:", response.data.sim_performance);
-      console.log("Frontier points length:", response.data.frontier_points?.length);
     } catch (err) {
       console.error(err);
       setError("Une erreur est survenue lors de l'envoi du formulaire.");
@@ -79,6 +79,19 @@ const Hero = () => {
             onSubmit={handleSubmit}
             className="bg-white p-6 rounded shadow max-w-xl mx-auto text-left"
           >
+            {/* Champ email */}
+            <label className="block mb-3 text-black">
+              Email :
+              <input
+                type="email"
+                name="email"
+                value={answers.email}
+                onChange={handleChange}
+                className="w-full p-2 border rounded mt-1"
+                required
+              />
+            </label>
+
             <label className="block mb-3 text-black">
               Âge :
               <input
@@ -172,6 +185,7 @@ const Hero = () => {
           {result && (
             <div className="mt-6 text-left bg-gray-800 text-white p-4 rounded">
               <h3 className="text-lg font-bold mb-2">Résultat du profil :</h3>
+              <p><strong>Email :</strong> {answers.email}</p>
               <p><strong>Profil :</strong> {result.profil}</p>
               <p><strong>Score de risque :</strong> {result.risk_score}</p>
 
@@ -193,86 +207,69 @@ const Hero = () => {
                     {Object.entries(result.portfolio_alloc).map(([asset, weight]) => (
                       <li key={asset}>{asset}: {(weight * 100).toFixed(2)}%</li>
                     ))}
-                  
-                    {/* Pie Chart for Allocation */}
-                    <h4 className="mt-4 text-md font-semibold">Diagramme en Camembert : Allocation</h4>
-                    <div className="w-full h-64 bg-white rounded my-2">
-                      <PieChart width={400} height={300}>
-                        <Pie
-                          data={Object.entries(result.portfolio_alloc)
-                            .filter(([, weight]) => weight > 0)
-                            .map(([asset, weight]) => ({ name: asset, value: weight * 100 }))}
-                          cx="50%" cy="50%" outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {Object.entries(result.portfolio_alloc)
-                            .filter(([, weight]) => weight > 0)
-                            .map(([,], index) => (
-                              <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042'][index % 4]} />
-                            ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </div>
                   </ul>
+
+                  {/* Pie Chart for Allocation */}
+                  <h4 className="mt-4 text-md font-semibold">Diagramme en Camembert : Allocation</h4>
+                  <div className="w-full h-64 bg-white rounded my-2">
+                    <PieChart width={400} height={300}>
+                      <Pie
+                        data={Object.entries(result.portfolio_alloc)
+                          .filter(([, weight]) => weight > 0)
+                          .map(([asset, weight]) => ({ name: asset, value: weight * 100 }))}
+                        cx="50%" cy="50%" outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {Object.entries(result.portfolio_alloc)
+                          .filter(([, weight]) => weight > 0)
+                          .map(([,], index) => (
+                            <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042'][index % 4]} />
+                          ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </div>
                 </>
               )}
 
               {/* Line Chart for Historical Performance */}
-              {result.sim_performance ? (
-                result.sim_performance.error ? (
-                  <p className="text-red-500 mt-4">Erreur Performance Simulée : {result.sim_performance.error}</p>
-                ) : result.sim_performance.dates && result.sim_performance.dates.length > 0 ? (
-                  <>
-                    <h4 className="mt-4 text-md font-semibold">Performance Simulée Historique (Rendement Cumulé)</h4>
-                    <div className="w-full h-64 bg-white rounded my-2">
-                      <LineChart width={600} height={300} data={result.sim_performance.dates.map((date, i) => ({
-                        date: date,
-                        return: result.sim_performance.cumulative_returns[i]
-                      }))}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <Tooltip labelFormatter={(label) => `Date: ${label}`} />
-                        <Legend />
-                        <Line type="monotone" dataKey="return" stroke="#8884d8" name="Rendement Cumulé" />
-                      </LineChart>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-yellow-500 mt-4">Données de performance simulée vides (vérifiez prices.csv).</p>
-                )
-              ) : (
-                <p className="text-yellow-500 mt-4">Données de performance simulée non disponibles.</p>
+              {result.sim_performance && result.sim_performance.dates && result.sim_performance.dates.length > 0 && (
+                <>
+                  <h4 className="mt-4 text-md font-semibold">Performance Simulée Historique (Rendement Cumulé)</h4>
+                  <div className="w-full h-64 bg-white rounded my-2">
+                    <LineChart width={600} height={300} data={result.sim_performance.dates.map((date, i) => ({
+                      date: date,
+                      return: result.sim_performance.cumulative_returns[i]
+                    }))}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip labelFormatter={(label) => `Date: ${label}`} />
+                      <Legend />
+                      <Line type="monotone" dataKey="return" stroke="#8884d8" name="Rendement Cumulé" />
+                    </LineChart>
+                  </div>
+                </>
               )}
 
               {/* Efficient Frontier Chart */}
-              {result.frontier_points && result.user_point ? (
-                result.frontier_points.length > 0 ? (
-                  <>
-                    <h4 className="mt-4 text-md font-semibold">Frontière Efficiente : Rendement vs Risque</h4>
-                    <div className="w-full h-64 bg-white rounded my-2 flex">
-                      <ScatterChart width={600} height={300}>
-                        <CartesianGrid />
-                        <XAxis type="number" dataKey="risk" name="Risque" unit="%" />
-                        <YAxis type="number" dataKey="return" name="Rendement" unit="%" />
-                        <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                        <Legend />
-                        {/* Frontier Curve as Line (connect points) */}
-                        <Line type="monotone" dataKey="return" data={result.frontier_points} stroke="#8884d8" name="Frontière Efficiente" dot={false} />
-                        {/* User's Portfolio Point */}
-                        <Scatter name="Votre Portefeuille" data={[result.user_point]} fill="#FF8042" />
-                      </ScatterChart>
-                    </div>
-                    <p className="text-sm mt-1">Ligne bleue : Frontière efficiente. Point orange : Votre portefeuille (Risque: {result.user_point.risk.toFixed(4)}, Rendement: {result.user_point.return.toFixed(4)}).</p>
-                  </>
-                ) : (
-                  <p className="text-red-500 mt-4">Erreur : Aucune donnée pour la frontière efficiente (vérifiez données historiques).</p>
-                )
-              ) : (
-                <p className="text-yellow-500 mt-4">Données de frontière efficiente non disponibles.</p>
+              {result.frontier_points && result.user_point && result.frontier_points.length > 0 && (
+                <>
+                  <h4 className="mt-4 text-md font-semibold">Frontière Efficiente : Rendement vs Risque</h4>
+                  <div className="w-full h-64 bg-white rounded my-2 flex">
+                    <ScatterChart width={600} height={300}>
+                      <CartesianGrid />
+                      <XAxis type="number" dataKey="risk" name="Risque" unit="%" />
+                      <YAxis type="number" dataKey="return" name="Rendement" unit="%" />
+                      <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                      <Legend />
+                      <Line type="monotone" dataKey="return" data={result.frontier_points} stroke="#8884d8" name="Frontière Efficiente" dot={false} />
+                      <Scatter name="Votre Portefeuille" data={[result.user_point]} fill="#FF8042" />
+                    </ScatterChart>
+                  </div>
+                </>
               )}
 
               {result.user_portfolio && (
@@ -280,10 +277,38 @@ const Hero = () => {
                   <strong>Performance du Portefeuille :</strong> Rendement: {result.user_portfolio.ret.toFixed(4)}, Risque: {result.user_portfolio.risk.toFixed(4)}
                 </p>
               )}
+
+              {/* Bouton pour télécharger le PDF */}
+           <Button
+  className="mt-4 w-full mb-6" // même classes que ton autre Button
+  onClick={async () => {
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:8000/generate_pdf",
+        answers,
+        { responseType: "blob" }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "rapport_investissement.pdf");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error(err);
+      setError("Erreur lors de la génération du PDF.");
+    }
+  }}
+>
+  Télécharger le rapport PDF
+</Button>
+
             </div>
           )}
         </div>
-        
+
         {/* Background design & gradient */}
         <div className="absolute -top-[54%] left-1/2 w-[234%] -translate-x-1/2 md:-top-[46%] md:w-[138%] lg:-top-[104%]">
           <img
